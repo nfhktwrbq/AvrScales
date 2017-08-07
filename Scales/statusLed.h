@@ -9,6 +9,8 @@
 #ifndef STATUSLED_H_
 #define STATUSLED_H_
 
+#include <stdint.h>
+
 #define CHECK_TIME_MS 1000
 
 #define DDRSL1 DDRB

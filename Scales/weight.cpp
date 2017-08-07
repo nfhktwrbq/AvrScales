@@ -4,6 +4,7 @@
  * Created: 22.01.2017 23:35:29
  *  Author: Andrew
  */ 
+#include "global.h"
 #include <avr/io.h>
 #include <util/delay.h>
 #include "weight.h"

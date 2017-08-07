@@ -51,5 +51,6 @@ void lcd_WrLong(uint32_t num, bool q);
 void lcd_clear(void);
 bool lcd_busy(void);
 void lcd_WrStr(const char *data, uint8_t len = MAX_LEN);
+void lcd_message(uint8_t position1, const char * firsrStringMesage, uint8_t position2, const char * secondStringMessage);
 
 #endif /* LCD_H_ */

@@ -9,6 +9,8 @@
 #ifndef WEIGHT_H_
 #define WEIGHT_H_
 
+#include <stdint.h>
+
 #define W_SCK	0b00000001
 #define W_DT	0b00000010
 #define PORT_W	PORTB

@@ -7,12 +7,13 @@
 
 #include <avr/io.h>
 #include "usart.h"
+#include "raspam.h"
 #include <avr/interrupt.h>
 
 
 ISR(USART_RX_vect)
 {	
-	uint8_t dummy = UDR0;
+	read();
 }
 
 
@@ -87,3 +88,6 @@ void usart_receive_string(char * buf)
 	*buf = 0;
 }
 
+uint8_t read(void){
+	return UDR0;
+}

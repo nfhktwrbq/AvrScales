@@ -5,10 +5,13 @@
  *  Author: Andrew
  */ 
 
-
-
-
 #include "global.h"
+#include <stdint.h>
+#include <avr/io.h>
+#include <util/delay.h>
+#include <avr/wdt.h>
+#include <avr/interrupt.h>
+
 #include "raspam.h"
 #include "usart.h"
 #include "eemem.h"
@@ -17,9 +20,8 @@
 #include "gsm.h"
 #include "statusLed.h"
 #include "buttons.h"
-#include <avr/io.h>
-#include <util/delay.h>
-#include <avr/wdt.h>
+
+
 
 #define LCD
 
@@ -28,10 +30,20 @@ uint8_t getModeByButtons(void);
 bool checkButton(uint8_t button);
 bool setCalibration(void);
 void enterInPowerSave(void);
+uint8_t exitFromPowerSave(void);
 void wdtOff(void);
 void wdtOn(void);
+void enterInPowerDown(void);
+void tryReset(void);
+void checkStatus(uint8_t status, const char * message, uint8_t ledStat);
 
 
+uint8_t reg;
+uint32_t zeroWeight;
+uint32_t targetWeight;
+uint32_t aliveCounter = 0;
+uint8_t counter = 0;
+char gsmBuf[MAX_LEN_OF_STRING];
 
 ISR(TIMER2_OVF_vect){
 	if(aliveCounter < ALIVE_TIME){
@@ -190,7 +202,7 @@ wdtOff();
 	stat_led_set_reset(0,0,0,0);
 	lcd_clear();
 	DDRB |= 0x01;
-	uint32_t weight;
+	//uint32_t weight;
 	uint8_t ii=0;
 	
     while(1)
@@ -448,7 +460,7 @@ uint8_t exitFromPowerSave(void){
 		
 	}
 	
-	
+	return SUCCESS;
 }
 
 void enterInPowerDown(void){
@@ -497,4 +509,3 @@ void checkStatus(uint8_t status, const char * message, uint8_t ledStat){
 	}
 }
 
-void lcd_message()

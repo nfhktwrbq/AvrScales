@@ -8,7 +8,7 @@
 
 #ifndef GLOBAL_H_
 #define GLOBAL_H_
-#include <stdint.h>
+
 #define F_CPU 8000000UL
 #define ALIVE_TIME 100
 

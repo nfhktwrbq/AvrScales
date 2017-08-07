@@ -9,6 +9,8 @@
 #ifndef EEMEM_H_
 #define EEMEM_H_
 
+#include <stdint.h>
+
 #define WEIGHT_ZERO 0
 #define WEIGHT_TARGET 1
 

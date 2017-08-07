@@ -269,3 +269,11 @@ void lcd_WrStr(const char *data, uint8_t len)
 		
 	}
 }
+
+void lcd_message(uint8_t position1, const char * firsrStringMesage, uint8_t position2, const char * secondStringMessage){
+	lcd_clear();
+	lcd_setXY(0, position1);
+	lcd_WrStr(firsrStringMesage);
+	lcd_setXY(1, position2);
+	lcd_WrStr(secondStringMessage);
+}
