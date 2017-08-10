@@ -11,6 +11,7 @@
 #include <util/delay.h>
 #include <avr/wdt.h>
 #include <avr/interrupt.h>
+#include <avr/sleep.h>
 
 #include "raspam.h"
 #include "usart.h"
@@ -63,8 +64,8 @@ char gsmBuf[MAX_LEN_OF_STRING];
 
 ISR(TIMER2_OVF_vect){
 	if(aliveCounter < ALIVE_TIME){
-		aliveCounter++;
-		enterInPowerSave();
+		aliveCounter++;			
+		//enterInPowerSave();
 	} else {
 		aliveCounter = 0;
 		cli();
@@ -156,8 +157,18 @@ int main(void)
 	
     while(1)
     {
+    	LCD_MESSAGE1(0 , 1, "Enter to PSM");
+		_delay_ms(1000);
 		enterInPowerSave();
-		exitFromPowerSave();		
+		
+		exitFromPowerSave();	
+
+
+		LCD_MESSAGE1(0 , 1, "EXIT FROM PSM");
+		_delay_ms(1000);
+		LCD_IMESSAGE1(1, 12, aliveCounter);
+		_delay_ms(1000);
+
 		ii++;		
 	//	weight = wght_get_value();
 		#ifdef LCD
@@ -275,12 +286,19 @@ void enterInPowerSave(void){
 	TCNT2 = 0;
 	TIMSK2 = 0x01; //enable interrupt
 	TCCR2B = 0x07; //start timer with prescaler 1024
+	cli();
+	/*PRR = 0xff;
+	MCUCR |= 0x60; //disable BOD in sleep
+	SMCR = 0x02; //goto power-save mode	*/
+	set_sleep_mode(SLEEP_MODE_PWR_SAVE);
+	sleep_enable();
 	sei();
-	SMCR = 0x03; //goto power-save mode	
+	sleep_cpu();
 }
 
 uint8_t exitFromPowerSave(void){
 
+	sleep_disable();
 	scaleInit();
 	
 	//get mode from eeprom and check status
@@ -363,5 +381,6 @@ void scaleInit(void){
 	}
 	
 	LCD_MESSAGE1(0, 1, "WEIGHT INIT");	
+	_delay_ms(500);
 	wght_init();
 }

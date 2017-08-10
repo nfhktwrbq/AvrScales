@@ -263,8 +263,8 @@ bool lcd_busy(void)
 }
 
 void lcd_WrStr(const char *data, uint8_t len)
-{
-	for(uint8_t i=0; *data!=0 && i<len; i++)
+{	
+	for(uint8_t i=0; *(data + i) != '\0' && i < len; i++)
 	{
 		lcd_WrChr(*(data+i));
 		
