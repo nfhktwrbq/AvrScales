@@ -13,6 +13,7 @@
 
 
 
+
 void lcd_init(void)//4 bit
 {
 	_delay_ms(25);
@@ -276,4 +277,26 @@ void lcd_message(uint8_t position1, const char * firsrStringMesage, uint8_t posi
 	lcd_WrStr(firsrStringMesage);
 	lcd_setXY(1, position2);
 	lcd_WrStr(secondStringMessage);
+}
+
+void lcd_message(uint8_t stringNumber, uint8_t position, const char * stringMessage){
+	lcd_clear();
+	if(!stringNumber){
+		lcd_setXY(1, position);
+		lcd_WrStr(stringMessage);
+	} else {
+		lcd_setXY(0, position);
+		lcd_WrStr(stringMessage);
+	}	
+}
+
+void lcd_iMessage(uint8_t stringNumber, uint8_t position, uint32_t data){
+	lcd_clear();
+	if(!stringNumber){
+		lcd_setXY(1, position);
+		lcd_WrLong(data, 1);
+	} else {
+		lcd_setXY(0, position);
+		lcd_WrLong(data, 1);
+	}	
 }
