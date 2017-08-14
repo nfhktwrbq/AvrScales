@@ -7,11 +7,13 @@
 
 #include "global.h"
 #include <stdint.h>
+#include <stdio.h>
 #include <avr/io.h>
 #include <util/delay.h>
 #include <avr/wdt.h>
 #include <avr/interrupt.h>
 #include <avr/sleep.h>
+#include <avr/power.h>
 
 #include "raspam.h"
 #include "usart.h"
@@ -53,22 +55,24 @@ void enterInPowerDown(void);
 void tryReset(void);
 void checkStatus(uint8_t status, uint8_t ledStat);
 void scaleInit(void);
-
+const char * convertWeightToString(char * buf, uint32_t weight);
 
 uint8_t reg;
 uint32_t zeroWeight;
 uint32_t targetWeight;
 uint32_t aliveCounter = 0;
 uint8_t counter = 0;
+bool sleepFlag = false;
 char gsmBuf[MAX_LEN_OF_STRING];
 
 ISR(TIMER2_OVF_vect){
 	if(aliveCounter < ALIVE_TIME){
-		aliveCounter++;			
+		aliveCounter++;
+		sleepFlag = true;		
 		//enterInPowerSave();
 	} else {
 		aliveCounter = 0;
-		cli();
+		sleepFlag = false;		
 	}
 }
 
@@ -118,7 +122,7 @@ int main(void)
 		
 	//get target weight from eeprom and checking status
 	LCD_MESSAGE1(0, 1, "GETING ZWGHT");	
-	checkStatus(eemem_get_weight(WEIGHT_ZERO, zeroWeight), STAT_LED9);
+	checkStatus(eemem_get_weight(WEIGHT_TARGET, targetWeight), STAT_LED9);
 	
 	//set ofset for correct measurements
 	wght_set_offset(zeroWeight);
@@ -159,7 +163,12 @@ int main(void)
     {
     	LCD_MESSAGE1(0 , 1, "Enter to PSM");
 		_delay_ms(1000);
+		sleep:
 		enterInPowerSave();
+		if(sleepFlag){
+			//stat_led_blink(1,1,1,1,1);
+			goto sleep;
+		} 
 		
 		exitFromPowerSave();	
 
@@ -169,10 +178,12 @@ int main(void)
 		LCD_IMESSAGE1(1, 12, aliveCounter);
 		_delay_ms(1000);
 
-		ii++;		
+		ii++;	
+		convertWeightToString(gsmBuf, wght_get_value());
+		LCD_MESSAGE1(0,0, gsmBuf);	
+		_delay_ms(5000);
 	//	weight = wght_get_value();
-		#ifdef LCD
-		lcd_clear();	
+		#ifdef LCD		
 		lcd_clear();
 		lcd_setXY(1,12);		
 		 lcd_WrLong( wght_get_value(),1);
@@ -282,37 +293,44 @@ bool setCalibration(void)
 }
 
 void enterInPowerSave(void){
+	cli();
 	TCCR2A = 0;
 	TCNT2 = 0;
 	TIMSK2 = 0x01; //enable interrupt
 	TCCR2B = 0x07; //start timer with prescaler 1024
-	cli();
+	sleepFlag = true;		
 	/*PRR = 0xff;
 	MCUCR |= 0x60; //disable BOD in sleep
 	SMCR = 0x02; //goto power-save mode	*/
 	set_sleep_mode(SLEEP_MODE_PWR_SAVE);
 	sleep_enable();
+	clock_prescale_set(clock_div_256);
 	sei();
 	sleep_cpu();
 }
 
 uint8_t exitFromPowerSave(void){
+	cli();
+	sleep_disable();	
+	clock_prescale_set(clock_div_1);
+	aliveCounter = 0;
+	TCNT2 = 0;
+	TIMSK2 = 0x00; //disble interrupt
+	TCCR2B = 0x00; //stop timer
 
-	sleep_disable();
 	scaleInit();
-	
+	sleepFlag = false;	
 	//get mode from eeprom and check status
 	LCD_MESSAGE1(0, 1, "GET MODE");		
 	checkStatus(eemem_get_mode(reg), STAT_LED3);	
 
-	stat_led_blink(1,0,0,0,10);
-			
 	if(reg != WORK_MODE) 
 	{
 		LCD_MESSAGE1(0, 1, "NOT WORK MODE!");
 		stat_led_blink(0,1,0,0,15);
 		tryReset();			
 	}	
+	sei();
 	return SUCCESS;
 }
 
@@ -383,4 +401,40 @@ void scaleInit(void){
 	LCD_MESSAGE1(0, 1, "WEIGHT INIT");	
 	_delay_ms(500);
 	wght_init();
+}
+
+const char * convertWeightToString(char * buf, uint32_t weight){
+	bool negative = false;
+	uint8_t counter = 0;
+	if(weight >= 0x10000000){
+		weight = ~weight - 1;
+		negative = true;
+	}
+	uint32_t unit = (targetWeight > zeroWeight) ? (targetWeight - zeroWeight) : (zeroWeight - targetWeight);
+	uint16_t modWeight = (uint16_t)(weight / unit);
+	uint16_t divWeight = (uint16_t)((weight*1000/unit)%1000);
+	for(uint8_t i  = 0; i < 3; i++){
+		buf[counter] =  divWeight % 10 + '0';
+		divWeight /= 10;
+		counter++;
+	} 
+	buf[counter] = '.';
+	counter++;
+	do{
+		buf[counter] =  modWeight % 10 + '0';
+		modWeight /= 10;
+		counter++;
+	}while(modWeight > 0);
+	if(negative){
+		buf[counter] = '-';
+	}	
+	char *begin = buf;
+	char *end = buf + counter - 1;
+	while (begin < end) {
+      *begin ^= *end ^= *begin ^= *end;
+      begin++; end--;
+   }
+   buf[counter + 1] = '\0';
+	//sprintf(buf, "%lu.%lu", ((weight)*1000/(targetWeight-zeroWeight))/1000, ((weight)*1000/(targetWeight-zeroWeight))%1000);
+	return buf;
 }

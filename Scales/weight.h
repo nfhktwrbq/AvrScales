@@ -21,11 +21,11 @@
 
 void wght_init(void);
 bool wght_busy(void);
-int32_t wght_get_data(void);
+uint32_t wght_get_data(void);
 void wght_power_up(void);
 void wght_power_down(void);
-int32_t wght_get_average(uint8_t times = 3);
-int32_t wght_get_value(uint8_t times = 3);
+uint32_t wght_get_average(uint8_t times = 3);
+uint32_t wght_get_value(uint8_t times = 3);
 void wght_zeroing(uint8_t times = 3);
 void wght_set_offset(uint32_t offset);
 uint32_t getOffset();

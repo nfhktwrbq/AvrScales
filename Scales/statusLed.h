@@ -11,7 +11,7 @@
 
 #include <stdint.h>
 
-#define CHECK_TIME_MS 1000
+#define CHECK_TIME_MS 100
 
 #define DDRSL1 DDRB
 #define DDRSL2 DDRD

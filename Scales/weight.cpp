@@ -9,7 +9,7 @@
 #include <util/delay.h>
 #include "weight.h"
 
-volatile int32_t wght_offset = 2200000;
+volatile uint32_t wght_offset = 2200000;
 
 void wght_init(void)
 {
@@ -19,7 +19,7 @@ void wght_init(void)
 	wght_get_value();
 }
 
-int32_t wght_get_data(void)
+uint32_t wght_get_data(void)
 {
 	while(wght_busy())
 	{	}
@@ -42,7 +42,7 @@ int32_t wght_get_data(void)
 	return data;		
 }
 
-int32_t wght_get_average(uint8_t times)
+uint32_t wght_get_average(uint8_t times)
 {
 	if (times == 0) return 0;
 	int32_t s = 0;
@@ -54,7 +54,7 @@ int32_t wght_get_average(uint8_t times)
 	return s/times;
 }
 
-int32_t wght_get_value(uint8_t times)
+uint32_t wght_get_value(uint8_t times)
 {
 	return (wght_get_average(times)-wght_offset);
 }
