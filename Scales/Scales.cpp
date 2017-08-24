@@ -32,8 +32,14 @@
 	#define LCD_MESSAGE2(p1, s1, p2, s2) lcd_message((p1), (s1), (p2), (s2))
 	#define LCD_MESSAGE1(sn, p, s) lcd_message((sn), (p), (s))
 	#define LCD_IMESSAGE1(sn, p, l) lcd_iMessage((sn), (p), (l))
-	#define LCD_INIT lcd_init();\
-					 lcd_clear()
+	#define LCD_INIT _delay_ms(500);\
+					 lcd_init();\
+					 _delay_ms(200);\
+					 lcd_clear();\
+					 _delay_ms(100)
+	#define LCD_OFF  lcd_off();\
+					 _delay_ms(100)
+	#define LCD_DELAY  _delay_ms(1000)
 #endif
 
 #ifndef LCD
@@ -41,6 +47,7 @@
 	#define LCD_MESSAGE1(sn, p, s)
 	#define LCD_IMESSAGE1(sn, p, l) 
 	#define LCD_INIT
+	#define LCD_OFF 			 
 #endif
 
 
@@ -68,8 +75,7 @@ char gsmBuf[MAX_LEN_OF_STRING];
 ISR(TIMER2_OVF_vect){
 	if(aliveCounter < ALIVE_TIME){
 		aliveCounter++;
-		sleepFlag = true;		
-		//enterInPowerSave();
+		sleepFlag = true;			
 	} else {
 		aliveCounter = 0;
 		sleepFlag = false;		
@@ -79,6 +85,9 @@ ISR(TIMER2_OVF_vect){
 
 int main(void)
 {
+	INIT_PWR;
+	PWR_ON;
+
 	wdtOff();	
 
 	scaleInit();
@@ -157,38 +166,37 @@ int main(void)
 	#endif
 
 	DDRB |= 0x01;	
-	uint8_t ii=0;
+	//uint8_t ii=0;
 	
     while(1)
     {
-    	LCD_MESSAGE1(0 , 1, "Enter to PSM");
-		_delay_ms(1000);
+    	LCD_MESSAGE1(0 , 1, "ENTER TO PSM");
+    	LCD_OFF;
+		
 		sleep:
 		enterInPowerSave();
-		if(sleepFlag){
-			//stat_led_blink(1,1,1,1,1);
+		if(sleepFlag){			
 			goto sleep;
 		} 
 		
 		exitFromPowerSave();	
-
 
 		LCD_MESSAGE1(0 , 1, "EXIT FROM PSM");
 		_delay_ms(1000);
 		LCD_IMESSAGE1(1, 12, aliveCounter);
 		_delay_ms(1000);
 
-		ii++;	
+//		ii++;	
 		convertWeightToString(gsmBuf, wght_get_value());
 		LCD_MESSAGE1(0,0, gsmBuf);	
-		_delay_ms(5000);
+		//_delay_ms(5000);
 	//	weight = wght_get_value();
-		#ifdef LCD		
-		lcd_clear();
-		lcd_setXY(1,12);		
-		 lcd_WrLong( wght_get_value(),1);
-		 _delay_ms(5000);
-		 #endif	
+		// #ifdef LCD		
+		// lcd_clear();
+		// lcd_setXY(1,12);		
+		//  lcd_WrLong( wght_get_value(),1);
+		//  _delay_ms(5000);
+		//  #endif	
     }
 }
 
@@ -293,7 +301,8 @@ bool setCalibration(void)
 }
 
 void enterInPowerSave(void){
-	cli();
+	cli();	
+	PWR_OFF; //disable power fron step-up converter
 	TCCR2A = 0;
 	TCNT2 = 0;
 	TIMSK2 = 0x01; //enable interrupt
@@ -378,29 +387,37 @@ void checkStatus(uint8_t status, uint8_t ledStat){
 }
 
 void scaleInit(void){
+	INIT_PWR;
+	PWR_ON;
+	
 	LCD_INIT;
 
 	LCD_MESSAGE1(0, 1, "LED INIT");	
 	stat_led_init();
+	LCD_DELAY;
 	
 	LCD_MESSAGE1(0, 1, "BUTTONS_INIT");	
 	buttons_init();
-	
+	LCD_DELAY;
+
 	LCD_MESSAGE1(0, 1, "CHECK LED");		
 	stat_led_check();
-	
+	LCD_DELAY;
+
 	LCD_MESSAGE1(0, 1, "GSM INIT");
 	gsm_init();
+	LCD_DELAY;
+
 	while(gsmBuf[5] != 'O'&& gsmBuf[6] != 'K')
 	{
 		gsm_send_at("AT", gsmBuf);		
 		LCD_MESSAGE1(0, 1, gsmBuf);	
-		_delay_ms(1000);
+		LCD_DELAY;
 	}
 	
 	LCD_MESSAGE1(0, 1, "WEIGHT INIT");	
-	_delay_ms(500);
 	wght_init();
+	LCD_DELAY;
 }
 
 const char * convertWeightToString(char * buf, uint32_t weight){
@@ -434,7 +451,13 @@ const char * convertWeightToString(char * buf, uint32_t weight){
       *begin ^= *end ^= *begin ^= *end;
       begin++; end--;
    }
-   buf[counter + 1] = '\0';
+   //buf[counter + 1] = '\0';
 	//sprintf(buf, "%lu.%lu", ((weight)*1000/(targetWeight-zeroWeight))/1000, ((weight)*1000/(targetWeight-zeroWeight))%1000);
 	return buf;
 }
+
+
+void initAlarmPin(void){
+	DDR_ALARM &= ~ALARM_PIN; //PD2 to input
+}
+

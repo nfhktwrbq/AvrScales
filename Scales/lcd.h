@@ -35,6 +35,7 @@
 #define RW_UP			PORT_RW  |= RW;
 
 #define STROBE			PORT_E |= E;\
+						_delay_us(100);\
 						PORT_E  &= ~E;\
 						_delay_ms(1);
 
@@ -54,6 +55,7 @@ void lcd_WrStr(const char *data, uint8_t len = MAX_LEN);
 void lcd_message(uint8_t position1, const char * firsrStringMesage, uint8_t position2, const char * secondStringMessage);
 void lcd_message(uint8_t stringNumber, uint8_t position1, const char * stringMesage);
 void lcd_iMessage(uint8_t stringNumber, uint8_t position1, uint32_t data);
+void lcd_off(void);
 
 
 #endif /* LCD_H_ */

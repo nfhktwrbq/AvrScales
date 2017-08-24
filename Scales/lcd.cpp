@@ -300,3 +300,11 @@ void lcd_iMessage(uint8_t stringNumber, uint8_t position, uint32_t data){
 		lcd_WrLong(data, 1);
 	}	
 }
+
+void lcd_off(void){
+	lcd_WrCmd(0x08); //disp off
+	lcd_WrChr(0x00); //to nulling datapins
+	E_DOWN
+	RS_DOWN
+	_delay_us(40);
+}
