@@ -5,8 +5,8 @@ CC = avr-g++
 OBJCOPY = avr-objcopy
  
 # Задаем из каких файлов собирать проект, можно указать несколько файлов
-SRCS = buttons.cpp  eemem.cpp  global.h  gsm.h    lcd.h     Scales.cpp     statusLed.h  usart.h     weight.h \
-buttons.h    eemem.h    gsm.cpp   lcd.cpp  raspam.h  statusLed.cpp  usart.cpp    weight.cpp
+SRCS = buttons.cpp  eemem.cpp  global.h  gsm.h    lcd.h     Scales.cpp     statusLed.h  usart.h     weight.h  adc.h\
+buttons.h    eemem.h    gsm.cpp   lcd.cpp  raspam.h  statusLed.cpp  usart.cpp    weight.cpp adc.cpp
  
 OBJS = $(SRCS:.c=.o)
  

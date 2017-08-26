@@ -10,7 +10,7 @@
 #define GLOBAL_H_
 
 #define F_CPU 8000000UL
-#define ALIVE_TIME 10
+#define ALIVE_TIME 1
 
 #define STAT_LED3 0x03
 #define STAT_LED5 0x05
@@ -24,6 +24,8 @@
 
 #define DDR_ALARM DDRD
 #define PORT_ALARM PORTD
+
+#define ADC_ONE_VOLT 50
 
 #define INIT_PWR (DDR_PWR |= PWR_PIN) //PC4 to output
 #define	PWR_ON (PORT_PWR |= PWR_PIN)

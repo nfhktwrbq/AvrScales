@@ -35,7 +35,7 @@
 #define RW_UP			PORT_RW  |= RW;
 
 #define STROBE			PORT_E |= E;\
-						_delay_us(100);\
+						_delay_us(400);\
 						PORT_E  &= ~E;\
 						_delay_ms(1);
 

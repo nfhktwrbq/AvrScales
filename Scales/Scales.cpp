@@ -8,6 +8,7 @@
 #include "global.h"
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 #include <avr/io.h>
 #include <util/delay.h>
 #include <avr/wdt.h>
@@ -23,6 +24,7 @@
 #include "gsm.h"
 #include "statusLed.h"
 #include "buttons.h"
+#include "adc.h"
 
 
 
@@ -63,6 +65,8 @@ void tryReset(void);
 void checkStatus(uint8_t status, uint8_t ledStat);
 void scaleInit(void);
 const char * convertWeightToString(char * buf, uint32_t weight);
+const char * convertADCtoVoltage(char * buf, uint8_t adc);
+void strCat(char * acceptBuf, const char * catBuf);
 
 uint8_t reg;
 uint32_t zeroWeight;
@@ -71,6 +75,7 @@ uint32_t aliveCounter = 0;
 uint8_t counter = 0;
 bool sleepFlag = false;
 char gsmBuf[MAX_LEN_OF_STRING];
+char tmpBuf[MAX_LEN_OF_STRING];
 
 ISR(TIMER2_OVF_vect){
 	if(aliveCounter < ALIVE_TIME){
@@ -164,13 +169,11 @@ int main(void)
 	stat_led_set_reset(0,0,0,0);
 	lcd_clear();
 	#endif
-
-	DDRB |= 0x01;	
-	//uint8_t ii=0;
 	
     while(1)
     {
-    	LCD_MESSAGE1(0 , 1, "ENTER TO PSM");
+    	LCD_MESSAGE1(0, 1, "ENTER TO PSM");
+    	LCD_DELAY;
     	LCD_OFF;
 		
 		sleep:
@@ -181,14 +184,25 @@ int main(void)
 		
 		exitFromPowerSave();	
 
-		LCD_MESSAGE1(0 , 1, "EXIT FROM PSM");
-		_delay_ms(1000);
-		LCD_IMESSAGE1(1, 12, aliveCounter);
-		_delay_ms(1000);
-
-//		ii++;	
+		LCD_MESSAGE1(0, 1, "EXIT FROM PSM");
+		LCD_DELAY;
+		
 		convertWeightToString(gsmBuf, wght_get_value());
-		LCD_MESSAGE1(0,0, gsmBuf);	
+		LCD_MESSAGE1(0, 0, gsmBuf);	
+		LCD_DELAY;
+
+		//form report string for sms message
+		memset(tmpBuf, 0, MAX_LEN_OF_STRING);
+		strCat(tmpBuf, "W:");
+		strCat(tmpBuf, gsmBuf);
+		strCat(tmpBuf, "; B:");
+		memset(gsmBuf, 0, MAX_LEN_OF_STRING);
+		convertADCtoVoltage(gsmBuf, adc_on_get_off());
+		strCat(tmpBuf, gsmBuf);
+
+		LCD_MESSAGE2(0, "SEND SMS:", 0, tmpBuf);
+		LCD_DELAY;
+
 		//_delay_ms(5000);
 	//	weight = wght_get_value();
 		// #ifdef LCD		
@@ -451,13 +465,29 @@ const char * convertWeightToString(char * buf, uint32_t weight){
       *begin ^= *end ^= *begin ^= *end;
       begin++; end--;
    }
-   //buf[counter + 1] = '\0';
+   buf[counter] = '\0';
 	//sprintf(buf, "%lu.%lu", ((weight)*1000/(targetWeight-zeroWeight))/1000, ((weight)*1000/(targetWeight-zeroWeight))%1000);
 	return buf;
 }
 
+const char * convertADCtoVoltage(char * buf, uint8_t adc){
+	buf[0] = '0' + adc / ADC_ONE_VOLT;
+	buf[1] = '.';
+	buf[2] = '0' + ((adc % ADC_ONE_VOLT) * 10) / ADC_ONE_VOLT;
+	buf[3] = 'V';
+	return buf;
+}
 
 void initAlarmPin(void){
 	DDR_ALARM &= ~ALARM_PIN; //PD2 to input
 }
 
+void strCat(char * acceptBuf, const char * catBuf){
+	while(*acceptBuf)
+		acceptBuf++;
+	while(*catBuf){
+		* acceptBuf = * catBuf; 
+		acceptBuf++;
+		catBuf++;
+	}
+}
