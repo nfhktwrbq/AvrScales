@@ -1,4 +1,4 @@
-/*
+﻿
  * global.h
  *
  * Created: 04.02.2015 23:12:36
@@ -30,5 +30,6 @@
 #define INIT_PWR (DDR_PWR |= PWR_PIN) //PC4 to output
 #define	PWR_ON (PORT_PWR |= PWR_PIN)
 #define	PWR_OFF (PORT_PWR &= ~PWR_PIN)
+
 
 #endif /* GLOBAL_H_ */

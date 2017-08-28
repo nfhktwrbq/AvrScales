@@ -9,7 +9,7 @@
 #ifndef GSM_H_
 #define GSM_H_
 
-#define SEND_SMS 
+#define SMS_CMD "AT+CMGS=\"+79255195222\""
 
 void gsm_init(void);
 void gsm_send_at(const char * cmd, char * resp);
