@@ -172,6 +172,40 @@ int main(void)
 	
     while(1)
     {
+
+		convertWeightToString(gsmBuf, wght_get_value());
+		LCD_MESSAGE1(0, 0, gsmBuf);	
+		LCD_DELAY;
+
+
+    	LCD_MESSAGE1(0, 1, "ENTER LOOP");
+    	LCD_DELAY;
+		//form report string for sms message
+		memset(tmpBuf, 0, MAX_LEN_OF_STRING);
+		strcat(tmpBuf, "W:");
+		strcat(tmpBuf, gsmBuf);
+
+		LCD_MESSAGE1(0, 1, gsmBuf);
+    	LCD_DELAY;
+
+
+		strcat(tmpBuf, "; B:");
+		memset(gsmBuf, 0, MAX_LEN_OF_STRING);
+
+		LCD_MESSAGE1(0, 1, "ENTER TO ADC");
+    	LCD_DELAY;
+    	
+		convertADCtoVoltage(gsmBuf, adc_on_get_off());
+		LCD_MESSAGE2(0, "VOLTAGE:", 4, gsmBuf);		
+    	LCD_DELAY;
+
+		strcat(tmpBuf, gsmBuf);
+
+		LCD_MESSAGE2(0, "SEND SMS:", 0, tmpBuf);
+		gsm_send_sms(tmpBuf, gsmBuf);
+		LCD_DELAY;
+
+
     	LCD_MESSAGE1(0, 1, "ENTER TO PSM");
     	LCD_DELAY;
     	LCD_OFF;
@@ -187,21 +221,8 @@ int main(void)
 		LCD_MESSAGE1(0, 1, "EXIT FROM PSM");
 		LCD_DELAY;
 		
-		convertWeightToString(gsmBuf, wght_get_value());
-		LCD_MESSAGE1(0, 0, gsmBuf);	
-		LCD_DELAY;
-
-		//form report string for sms message
-		memset(tmpBuf, 0, MAX_LEN_OF_STRING);
-		strCat(tmpBuf, "W:");
-		strCat(tmpBuf, gsmBuf);
-		strCat(tmpBuf, "; B:");
-		memset(gsmBuf, 0, MAX_LEN_OF_STRING);
-		convertADCtoVoltage(gsmBuf, adc_on_get_off());
-		strCat(tmpBuf, gsmBuf);
-
-		LCD_MESSAGE2(0, "SEND SMS:", 0, tmpBuf);
-		LCD_DELAY;
+		
+		
 
 		//_delay_ms(5000);
 	//	weight = wght_get_value();
@@ -358,7 +379,7 @@ uint8_t exitFromPowerSave(void){
 }
 
 void enterInPowerDown(void){
-	
+	while(1);
 }
 
 void tryReset(void){
@@ -419,15 +440,33 @@ void scaleInit(void){
 	LCD_DELAY;
 
 	LCD_MESSAGE1(0, 1, "GSM INIT");
-	gsm_init();
+	if(gsm_init()){
+		LCD_MESSAGE1(0, 1, "GSM INIT OK");
+	} else {
+		LCD_MESSAGE1(0, 1, "GSM INIT FAIL");
+		stat_led_set_reset(0,1,1,1);
+		enterInPowerDown();
+
+	}
 	LCD_DELAY;
 
-	while(gsmBuf[5] != 'O'&& gsmBuf[6] != 'K')
-	{
-		gsm_send_at("AT", gsmBuf);		
-		LCD_MESSAGE1(0, 1, gsmBuf);	
-		LCD_DELAY;
+	LCD_MESSAGE1(0, 1, "GSM REG");
+	if(gsm_check_reg()){
+		LCD_MESSAGE1(0, 1, "GSM REG OK");
+	} else {
+		LCD_MESSAGE1(0, 1, "GSM REG FAIL");
+		stat_led_set_reset(1,1,1,0);
+		enterInPowerDown();
 	}
+	LCD_DELAY;
+
+
+
+LCD_MESSAGE1(0, 1,"SEND SMS");	
+
+	if(gsm_send_sms("Hello!", gsmBuf)) LCD_MESSAGE1(0, 1,"SEND SMS OK");	
+
+		LCD_DELAY;
 	
 	LCD_MESSAGE1(0, 1, "WEIGHT INIT");	
 	wght_init();

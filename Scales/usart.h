@@ -10,6 +10,7 @@
 #define USART_H_
 
 #include <stdint.h>
+#include "global.h"
 
 #define SEND_BYTE_TIMEOUT 10000
 #define RECEIVE_BYTE_TIMEOUT 10000

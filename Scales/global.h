@@ -1,4 +1,4 @@
-﻿
+﻿/*
  * global.h
  *
  * Created: 04.02.2015 23:12:36
@@ -18,6 +18,8 @@
 
 #define PWR_PIN 0x10
 #define ALARM_PIN 0x04
+
+#define MAX_LEN_OF_STRING 40
 
 #define DDR_PWR DDRC
 #define PORT_PWR PORTC 
