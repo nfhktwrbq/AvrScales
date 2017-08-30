@@ -21,13 +21,13 @@
 
 void wght_init(void);
 bool wght_busy(void);
-uint32_t wght_get_data(void);
+int32_t wght_get_data(void);
 void wght_power_up(void);
 void wght_power_down(void);
-uint32_t wght_get_average(uint8_t times = 3);
-uint32_t wght_get_value(uint8_t times = 3);
+int32_t wght_get_average(uint8_t times = 3);
+int32_t wght_get_value(uint8_t times = 3);
 void wght_zeroing(uint8_t times = 3);
-void wght_set_offset(uint32_t offset);
-uint32_t getOffset();
+void wght_set_offset(int32_t offset);
+int32_t getOffset();
 
 #endif /* WEIGHT_H_ */

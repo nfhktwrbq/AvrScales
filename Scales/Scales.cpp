@@ -69,9 +69,11 @@ const char * convertADCtoVoltage(char * buf, uint8_t adc);
 void strCat(char * acceptBuf, const char * catBuf);
 
 uint8_t reg;
-uint32_t zeroWeight;
-uint32_t targetWeight;
-uint32_t aliveCounter = 0;
+uint32_t zeroWeightU;
+uint32_t targetWeightU;
+int32_t zeroWeight;
+int32_t targetWeight;
+int32_t aliveCounter = 0;
 uint8_t counter = 0;
 bool sleepFlag = false;
 char gsmBuf[MAX_LEN_OF_STRING];
@@ -132,11 +134,13 @@ int main(void)
 	
 	//get zero weight from eeprom and checking staus
 	LCD_MESSAGE1(0, 1, "GETING ZWGHT");
-	checkStatus(eemem_get_weight(WEIGHT_ZERO, zeroWeight), STAT_LED5);
+	checkStatus(eemem_get_weight(WEIGHT_ZERO, zeroWeightU), STAT_LED5);
+	zeroWeight = int32_t(zeroWeightU);
 		
 	//get target weight from eeprom and checking status
 	LCD_MESSAGE1(0, 1, "GETING ZWGHT");	
-	checkStatus(eemem_get_weight(WEIGHT_TARGET, targetWeight), STAT_LED9);
+	checkStatus(eemem_get_weight(WEIGHT_TARGET, targetWeightU), STAT_LED9);
+	targetWeight = int32_t(targetWeightU);
 	
 	//set ofset for correct measurements
 	wght_set_offset(zeroWeight);
@@ -173,7 +177,10 @@ int main(void)
     while(1)
     {
 
-		convertWeightToString(gsmBuf, wght_get_value());
+		//convertWeightToString(gsmBuf, wght_get_value());
+		snprintf(gsmBuf, MAX_LEN_OF_STRING, "%.3f", wght_get_value()/double(targetWeight - zeroWeight));
+		//sprintf(gsmBuf, "%.3f", 12.333);
+		//dtostrf(wght_get_value()/double(targetWeight - zeroWeight), 7, 3, gsmBuf);
 		LCD_MESSAGE1(0, 0, gsmBuf);	
 		LCD_DELAY;
 
@@ -195,15 +202,19 @@ int main(void)
 		LCD_MESSAGE1(0, 1, "ENTER TO ADC");
     	LCD_DELAY;
     	
-		convertADCtoVoltage(gsmBuf, adc_on_get_off());
+		//convertADCtoVoltage(gsmBuf, adc_on_get_off());
+		snprintf(gsmBuf, MAX_LEN_OF_STRING, "%.2f", adc_on_get_off()/double(ADC_ONE_VOLT));
+		//dtostrf(adc_on_get_off()/double(ADC_ONE_VOLT), 7, 3, gsmBuf);
 		LCD_MESSAGE2(0, "VOLTAGE:", 4, gsmBuf);		
     	LCD_DELAY;
 
 		strcat(tmpBuf, gsmBuf);
 
 		LCD_MESSAGE2(0, "SEND SMS:", 0, tmpBuf);
-		gsm_send_sms(tmpBuf, gsmBuf);
-		LCD_DELAY;
+		// if(gsm_send_sms(tmpBuf, gsmBuf)) LCD_MESSAGE1(0, 1,"SEND SMS OK");
+		 LCD_DELAY;
+		 LCD_DELAY;
+		 LCD_DELAY;
 
 
     	LCD_MESSAGE1(0, 1, "ENTER TO PSM");
@@ -450,23 +461,20 @@ void scaleInit(void){
 	}
 	LCD_DELAY;
 
-	LCD_MESSAGE1(0, 1, "GSM REG");
-	if(gsm_check_reg()){
-		LCD_MESSAGE1(0, 1, "GSM REG OK");
-	} else {
-		LCD_MESSAGE1(0, 1, "GSM REG FAIL");
-		stat_led_set_reset(1,1,1,0);
-		enterInPowerDown();
-	}
-	LCD_DELAY;
+	// LCD_MESSAGE1(0, 1, "GSM REG");
+	// if(gsm_check_reg()){
+	// 	LCD_MESSAGE1(0, 1, "GSM REG OK");
+	// } else {
+	// 	LCD_MESSAGE1(0, 1, "GSM REG FAIL");
+	// 	stat_led_set_reset(1,1,1,0);
+	// 	enterInPowerDown();
+	// }
+	// LCD_DELAY;
 
 
-
-LCD_MESSAGE1(0, 1,"SEND SMS");	
-
-	if(gsm_send_sms("Hello!", gsmBuf)) LCD_MESSAGE1(0, 1,"SEND SMS OK");	
-
-		LCD_DELAY;
+	// LCD_MESSAGE1(0, 1,"SEND SMS");
+	// if(gsm_send_sms("Hello!", gsmBuf)) LCD_MESSAGE1(0, 1,"SEND SMS OK");
+	// LCD_DELAY;
 	
 	LCD_MESSAGE1(0, 1, "WEIGHT INIT");	
 	wght_init();

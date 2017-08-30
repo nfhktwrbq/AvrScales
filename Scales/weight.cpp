@@ -9,7 +9,7 @@
 #include <util/delay.h>
 #include "weight.h"
 
-volatile uint32_t wght_offset = 2200000;
+volatile int32_t wght_offset = 2200000;
 
 void wght_init(void)
 {
@@ -19,11 +19,11 @@ void wght_init(void)
 	wght_get_value();
 }
 
-uint32_t wght_get_data(void)
+int32_t wght_get_data(void)
 {
 	while(wght_busy())
 	{	}
-	uint32_t data = 0;
+	int32_t data = 0;
 	for(uint8_t i = 0; i<24; i++)
 	{
 		PORT_W |= W_SCK;
@@ -42,7 +42,7 @@ uint32_t wght_get_data(void)
 	return data;		
 }
 
-uint32_t wght_get_average(uint8_t times)
+int32_t wght_get_average(uint8_t times)
 {
 	if (times == 0) return 0;
 	int32_t s = 0;
@@ -54,7 +54,7 @@ uint32_t wght_get_average(uint8_t times)
 	return s/times;
 }
 
-uint32_t wght_get_value(uint8_t times)
+int32_t wght_get_value(uint8_t times)
 {
 	return (wght_get_average(times)-wght_offset);
 }
@@ -64,7 +64,7 @@ void wght_zeroing(uint8_t times)
 	wght_set_offset(wght_get_average(times));	
 }
 
-void wght_set_offset(uint32_t offset)
+void wght_set_offset(int32_t offset)
 {
 	wght_offset = offset;
 }
@@ -91,7 +91,7 @@ void wght_power_down(void)
 	PORT_W |= W_SCK;
 }
 
-uint32_t getOffset()
+int32_t getOffset()
 {	
 	return wght_offset;
 }

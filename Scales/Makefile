@@ -16,11 +16,13 @@ MCU=atmega328p
 # Флаги компилятора, при помощи F_CPU определяем частоту на которой будет работать контроллер,
 CFLAGS = -mmcu=$(MCU) -Wall  -Os -Werror -lm  -mcall-prologues -DF_CPU=8000000
 LDFLAGS = -mmcu=$(MCU)  -Wall  -Os  -Werror 
+
+PRINTF_LIB_FLOAT = -Wl,-u,vfprintf -lprintf_flt
  
 all: $(TARG)
  
 $(TARG): $(OBJS)
-	$(CC) $(LDFLAGS) -o $@.elf  $(OBJS) -lm
+	$(CC) $(LDFLAGS) $(PRINTF_LIB_FLOAT) -o $@.elf  $(OBJS) -lm
 	$(OBJCOPY) -O binary -R .eeprom -R .nwram  $@.elf $@.bin
 	$(OBJCOPY) -O ihex -R .eeprom -R .nwram  $@.elf $@.hex
  
