@@ -27,7 +27,7 @@
 #define DDR_ALARM DDRD
 #define PORT_ALARM PORTD
 
-#define ADC_ONE_VOLT 50
+#define ADC_ONE_VOLT 170
 
 #define INIT_PWR (DDR_PWR |= PWR_PIN) //PC4 to output
 #define	PWR_ON (PORT_PWR |= PWR_PIN)

@@ -64,18 +64,18 @@ void enterInPowerDown(void);
 void tryReset(void);
 void checkStatus(uint8_t status, uint8_t ledStat);
 void scaleInit(void);
-const char * convertWeightToString(char * buf, uint32_t weight);
-const char * convertADCtoVoltage(char * buf, uint8_t adc);
-void strCat(char * acceptBuf, const char * catBuf);
+void initAlarm(void);
+
 
 uint8_t reg;
-uint32_t zeroWeightU;
-uint32_t targetWeightU;
+//uint32_t zeroWeightU;
+//uint32_t targetWeightU;
 int32_t zeroWeight;
 int32_t targetWeight;
 int32_t aliveCounter = 0;
 uint8_t counter = 0;
 bool sleepFlag = false;
+bool alarmFlag = false;
 char gsmBuf[MAX_LEN_OF_STRING];
 char tmpBuf[MAX_LEN_OF_STRING];
 
@@ -89,6 +89,11 @@ ISR(TIMER2_OVF_vect){
 	}
 }
 
+
+
+ISR(INT0_vect){
+	alarmFlag = true;
+}
 
 int main(void)
 {
@@ -134,13 +139,13 @@ int main(void)
 	
 	//get zero weight from eeprom and checking staus
 	LCD_MESSAGE1(0, 1, "GETING ZWGHT");
-	checkStatus(eemem_get_weight(WEIGHT_ZERO, zeroWeightU), STAT_LED5);
-	zeroWeight = int32_t(zeroWeightU);
+	checkStatus(eemem_get_weight(WEIGHT_ZERO, (uint32_t & )zeroWeight), STAT_LED5);
+	//zeroWeight = int32_t(zeroWeightU);
 		
 	//get target weight from eeprom and checking status
 	LCD_MESSAGE1(0, 1, "GETING ZWGHT");	
-	checkStatus(eemem_get_weight(WEIGHT_TARGET, targetWeightU), STAT_LED9);
-	targetWeight = int32_t(targetWeightU);
+	checkStatus(eemem_get_weight(WEIGHT_TARGET, (uint32_t & )targetWeight), STAT_LED9);
+	//targetWeight = int32_t(targetWeightU);
 	
 	//set ofset for correct measurements
 	wght_set_offset(zeroWeight);
@@ -185,10 +190,16 @@ int main(void)
 		LCD_DELAY;
 
 
-    	LCD_MESSAGE1(0, 1, "ENTER LOOP");
-    	LCD_DELAY;
+    	
 		//form report string for sms message
 		memset(tmpBuf, 0, MAX_LEN_OF_STRING);
+
+		if(alarmFlag){
+			strcat(tmpBuf, "ALARM! ");
+			alarmFlag = false;
+		} 
+
+
 		strcat(tmpBuf, "W:");
 		strcat(tmpBuf, gsmBuf);
 
@@ -205,6 +216,7 @@ int main(void)
 		//convertADCtoVoltage(gsmBuf, adc_on_get_off());
 		snprintf(gsmBuf, MAX_LEN_OF_STRING, "%.2f", adc_on_get_off()/double(ADC_ONE_VOLT));
 		//dtostrf(adc_on_get_off()/double(ADC_ONE_VOLT), 7, 3, gsmBuf);
+		strcat(gsmBuf, "V");
 		LCD_MESSAGE2(0, "VOLTAGE:", 4, gsmBuf);		
     	LCD_DELAY;
 
@@ -223,6 +235,9 @@ int main(void)
 		
 		sleep:
 		enterInPowerSave();
+		if(alarmFlag) {
+			sleepFlag = false;
+		}
 		if(sleepFlag){			
 			goto sleep;
 		} 
@@ -437,6 +452,7 @@ void scaleInit(void){
 	PWR_ON;
 	
 	LCD_INIT;
+	initAlarm();
 
 	LCD_MESSAGE1(0, 1, "LED INIT");	
 	stat_led_init();
@@ -481,60 +497,11 @@ void scaleInit(void){
 	LCD_DELAY;
 }
 
-const char * convertWeightToString(char * buf, uint32_t weight){
-	bool negative = false;
-	uint8_t counter = 0;
-	if(weight >= 0x10000000){
-		weight = ~weight - 1;
-		negative = true;
-	}
-	uint32_t unit = (targetWeight > zeroWeight) ? (targetWeight - zeroWeight) : (zeroWeight - targetWeight);
-	uint16_t modWeight = (uint16_t)(weight / unit);
-	uint16_t divWeight = (uint16_t)((weight*1000/unit)%1000);
-	for(uint8_t i  = 0; i < 3; i++){
-		buf[counter] =  divWeight % 10 + '0';
-		divWeight /= 10;
-		counter++;
-	} 
-	buf[counter] = '.';
-	counter++;
-	do{
-		buf[counter] =  modWeight % 10 + '0';
-		modWeight /= 10;
-		counter++;
-	}while(modWeight > 0);
-	if(negative){
-		buf[counter] = '-';
-	}	
-	char *begin = buf;
-	char *end = buf + counter - 1;
-	while (begin < end) {
-      *begin ^= *end ^= *begin ^= *end;
-      begin++; end--;
-   }
-   buf[counter] = '\0';
-	//sprintf(buf, "%lu.%lu", ((weight)*1000/(targetWeight-zeroWeight))/1000, ((weight)*1000/(targetWeight-zeroWeight))%1000);
-	return buf;
-}
 
-const char * convertADCtoVoltage(char * buf, uint8_t adc){
-	buf[0] = '0' + adc / ADC_ONE_VOLT;
-	buf[1] = '.';
-	buf[2] = '0' + ((adc % ADC_ONE_VOLT) * 10) / ADC_ONE_VOLT;
-	buf[3] = 'V';
-	return buf;
-}
-
-void initAlarmPin(void){
+void initAlarm(void){
 	DDR_ALARM &= ~ALARM_PIN; //PD2 to input
+	EICRA = 0x01; //logical change on pd2 generate intrrupt
+	EIMSK = 0x01; //enable interrupt on pd2
+
 }
 
-void strCat(char * acceptBuf, const char * catBuf){
-	while(*acceptBuf)
-		acceptBuf++;
-	while(*catBuf){
-		* acceptBuf = * catBuf; 
-		acceptBuf++;
-		catBuf++;
-	}
-}

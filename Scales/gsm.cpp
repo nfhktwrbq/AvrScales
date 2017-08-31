@@ -115,6 +115,7 @@ lcd_clear();
 
 	memset(buf, 0, 40);
 	gsm_send_at("AT+CMGF=1", buf);
+	usart_interrupt_dis();
 
 /*lcd_clear();
 	lcd_message(0,0,(buf+9));
@@ -152,6 +153,7 @@ usart_send_byte(0x0a);
 	/*lcd_message(0,0,(buf));
 	
 	_delay_ms(3000);*/
+	usart_interrupt_en();
 	return true;
 	
 }
