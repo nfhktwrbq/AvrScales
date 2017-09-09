@@ -186,8 +186,8 @@ int main(void)
 		snprintf(gsmBuf, MAX_LEN_OF_STRING, "%.3f", wght_get_value()/double(targetWeight - zeroWeight));
 		//sprintf(gsmBuf, "%.3f", 12.333);
 		//dtostrf(wght_get_value()/double(targetWeight - zeroWeight), 7, 3, gsmBuf);
-		LCD_MESSAGE1(0, 0, gsmBuf);	
-		LCD_DELAY;
+		/*LCD_MESSAGE1(0, 0, gsmBuf);	
+		LCD_DELAY;*/
 
 
     	
@@ -500,6 +500,7 @@ void gsmPrepare(void){
 	gsm_send_at("AT+CFUN=1", gsmBuf); //power norm func
 	/*LCD_MESSAGE1(0, 0, gsmBuf);
 	LCD_DELAY;*/
+	_delay_ms(1500);
 	if(gsm_init()){
 		LCD_MESSAGE1(0, 1, "GSM INIT OK");
 	} else {

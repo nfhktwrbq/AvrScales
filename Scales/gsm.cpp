@@ -26,7 +26,7 @@ bool gsm_init(void)
 	while(buf[5] != 'O'&& buf[6] != 'K')
 	{
 		gsm_send_at("AT", buf);		
-		_delay_ms(100);
+		_delay_ms(500);
 		i++;
 		if(i > TRY_TIMES) return false;
 	}
