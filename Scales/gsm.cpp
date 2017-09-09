@@ -81,8 +81,8 @@ bool gsm_check_reg(void)
 bool gsm_send_sms(const char * msg, char * resp)
 {
 
-	char  buf[40];
-	memset(buf, 0, 40);
+	char  buf[MAX_LEN_OF_STRING];
+	memset(buf, 0, MAX_LEN_OF_STRING);
 	/*gsm_send_at("AT+CREG?", buf);
 
 lcd_clear();
@@ -113,7 +113,7 @@ lcd_clear();
 	if(!gsm_check_reg()) return false;
 
 
-	memset(buf, 0, 40);
+	memset(buf, 0, MAX_LEN_OF_STRING);
 	gsm_send_at("AT+CMGF=1", buf);
 	usart_interrupt_dis();
 

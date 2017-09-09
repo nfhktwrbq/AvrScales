@@ -65,7 +65,7 @@ void tryReset(void);
 void checkStatus(uint8_t status, uint8_t ledStat);
 void scaleInit(void);
 void initAlarm(void);
-
+void gsmPrepare(void);
 
 uint8_t reg;
 //uint32_t zeroWeightU;
@@ -203,8 +203,8 @@ int main(void)
 		strcat(tmpBuf, "W:");
 		strcat(tmpBuf, gsmBuf);
 
-		LCD_MESSAGE1(0, 1, gsmBuf);
-    	LCD_DELAY;
+		/*LCD_MESSAGE1(0, 1, gsmBuf);
+    	LCD_DELAY;*/
 
 
 		strcat(tmpBuf, "; B:");
@@ -217,16 +217,20 @@ int main(void)
 		snprintf(gsmBuf, MAX_LEN_OF_STRING, "%.2f", adc_on_get_off()/double(ADC_ONE_VOLT));
 		//dtostrf(adc_on_get_off()/double(ADC_ONE_VOLT), 7, 3, gsmBuf);
 		strcat(gsmBuf, "V");
-		LCD_MESSAGE2(0, "VOLTAGE:", 4, gsmBuf);		
-    	LCD_DELAY;
+		/*LCD_MESSAGE2(0, "VOLTAGE:", 4, gsmBuf);		
+    	LCD_DELAY;*/
 
 		strcat(tmpBuf, gsmBuf);
 
 		LCD_MESSAGE2(0, "SEND SMS:", 0, tmpBuf);
-		// if(gsm_send_sms(tmpBuf, gsmBuf)) LCD_MESSAGE1(0, 1,"SEND SMS OK");
-		 LCD_DELAY;
-		 LCD_DELAY;
-		 LCD_DELAY;
+		gsmPrepare();
+		if(gsm_send_sms(tmpBuf, gsmBuf)){
+			LCD_MESSAGE1(0, 1,"SEND SMS OK");
+		}
+		else{
+		 LCD_MESSAGE1(0, 1,"SEND SMS FAIL");
+		}
+		LCD_DELAY;
 
 
     	LCD_MESSAGE1(0, 1, "ENTER TO PSM");
@@ -404,8 +408,20 @@ uint8_t exitFromPowerSave(void){
 	return SUCCESS;
 }
 
-void enterInPowerDown(void){
-	while(1);
+void enterInPowerDown(void){	
+	if(adc_on_get_off() > MIN_VOLTAGE){
+		LCD_MESSAGE1(0, 1, "TRY RESET");
+		LCD_DELAY;	
+		tryReset();
+	} 
+	else {
+		LCD_MESSAGE1(0, 1, "GO DOWN");
+		LCD_DELAY;	
+		LCD_OFF;
+		PWR_OFF;
+		cli();
+		enterInPowerSave();
+	}
 }
 
 void tryReset(void){
@@ -467,33 +483,40 @@ void scaleInit(void){
 	LCD_DELAY;
 
 	LCD_MESSAGE1(0, 1, "GSM INIT");
+
+	if(gsm_init()){
+		gsm_send_at("AT+CFUN=0", gsmBuf); //power minimal func
+	}
+	
+	/*LCD_MESSAGE1(0, 0, gsmBuf);
+	LCD_DELAY;*/
+		
+	LCD_MESSAGE1(0, 1, "WEIGHT INIT");	
+	wght_init();
+	LCD_DELAY;
+}
+
+void gsmPrepare(void){
+	gsm_send_at("AT+CFUN=1", gsmBuf); //power norm func
+	/*LCD_MESSAGE1(0, 0, gsmBuf);
+	LCD_DELAY;*/
 	if(gsm_init()){
 		LCD_MESSAGE1(0, 1, "GSM INIT OK");
 	} else {
 		LCD_MESSAGE1(0, 1, "GSM INIT FAIL");
 		stat_led_set_reset(0,1,1,1);
 		enterInPowerDown();
-
 	}
 	LCD_DELAY;
 
-	// LCD_MESSAGE1(0, 1, "GSM REG");
-	// if(gsm_check_reg()){
-	// 	LCD_MESSAGE1(0, 1, "GSM REG OK");
-	// } else {
-	// 	LCD_MESSAGE1(0, 1, "GSM REG FAIL");
-	// 	stat_led_set_reset(1,1,1,0);
-	// 	enterInPowerDown();
-	// }
-	// LCD_DELAY;
-
-
-	// LCD_MESSAGE1(0, 1,"SEND SMS");
-	// if(gsm_send_sms("Hello!", gsmBuf)) LCD_MESSAGE1(0, 1,"SEND SMS OK");
-	// LCD_DELAY;
-	
-	LCD_MESSAGE1(0, 1, "WEIGHT INIT");	
-	wght_init();
+	LCD_MESSAGE1(0, 1, "GSM REG");
+	if(gsm_check_reg()){
+		LCD_MESSAGE1(0, 1, "GSM REG OK");
+	} else {
+		LCD_MESSAGE1(0, 1, "GSM REG FAIL");
+		stat_led_set_reset(1,1,1,0);
+		enterInPowerDown();
+	}
 	LCD_DELAY;
 }
 
