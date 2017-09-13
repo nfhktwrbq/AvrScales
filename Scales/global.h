@@ -10,7 +10,7 @@
 #define GLOBAL_H_
 
 #define F_CPU 8000000UL
-#define ALIVE_TIME 3500
+#define ALIVE_TIME 10500
 
 #define STAT_LED3 0x03
 #define STAT_LED5 0x05

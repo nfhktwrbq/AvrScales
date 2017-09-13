@@ -182,6 +182,7 @@ int main(void)
     while(1)
     {
 
+
 		//convertWeightToString(gsmBuf, wght_get_value());
 		snprintf(gsmBuf, MAX_LEN_OF_STRING, "%.3f", wght_get_value()/double(targetWeight - zeroWeight));
 		//sprintf(gsmBuf, "%.3f", 12.333);
@@ -251,7 +252,7 @@ int main(void)
 		LCD_MESSAGE1(0, 1, "EXIT FROM PSM");
 		LCD_DELAY;
 		
-		
+		_delay_ms(8000);
 		
 
 		//_delay_ms(5000);
@@ -524,7 +525,7 @@ void gsmPrepare(void){
 
 void initAlarm(void){
 	DDR_ALARM &= ~ALARM_PIN; //PD2 to input
-	EICRA = 0x01; //logical change on pd2 generate intrrupt
+	EICRA = 0x03; //0x03 rising edge generate interrupt   //0x01; //logical change on pd2 generate intrrupt
 	EIMSK = 0x01; //enable interrupt on pd2
 
 }
