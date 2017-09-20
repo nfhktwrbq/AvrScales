@@ -252,7 +252,7 @@ int main(void)
 		LCD_MESSAGE1(0, 1, "EXIT FROM PSM");
 		LCD_DELAY;
 		
-		_delay_ms(8000);
+		//_delay_ms(8000);
 		
 
 		//_delay_ms(5000);
@@ -467,7 +467,17 @@ void checkStatus(uint8_t status, uint8_t ledStat){
 void scaleInit(void){
 	INIT_PWR;
 	PWR_ON;
+	_delay_ms(500);
+	PWR_OFF;
+	_delay_ms(500);
+	PWR_ON;
+	_delay_ms(500);
+	PWR_OFF;
+	_delay_ms(500);
+	PWR_ON;
+	_delay_ms(100);
 	
+
 	LCD_INIT;
 	initAlarm();
 
@@ -525,6 +535,7 @@ void gsmPrepare(void){
 
 void initAlarm(void){
 	DDR_ALARM &= ~ALARM_PIN; //PD2 to input
+	PORT_ALARM &= ~ALARM_PIN; //ALARM_PIN to down
 	EICRA = 0x03; //0x03 rising edge generate interrupt   //0x01; //logical change on pd2 generate intrrupt
 	EIMSK = 0x01; //enable interrupt on pd2
 
