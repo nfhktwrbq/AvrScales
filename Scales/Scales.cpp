@@ -66,13 +66,14 @@ void checkStatus(uint8_t status, uint8_t ledStat);
 void scaleInit(void);
 void initAlarm(void);
 void gsmPrepare(void);
+int32_t average(int32_t val1, int32_t val2);
 
 uint8_t reg;
-//uint32_t zeroWeightU;
-//uint32_t targetWeightU;
 int32_t zeroWeight;
 int32_t targetWeight;
 int32_t aliveCounter = 0;
+int32_t averageWeight = 0;
+int32_t averageVoltage = 0;
 uint8_t counter = 0;
 bool sleepFlag = false;
 bool alarmFlag = false;
@@ -88,8 +89,6 @@ ISR(TIMER2_OVF_vect){
 		sleepFlag = false;		
 	}
 }
-
-
 
 ISR(INT0_vect){
 	alarmFlag = true;
@@ -136,63 +135,37 @@ int main(void)
 			enterInPowerDown();
 		}		
 	}
-	
-	//get zero weight from eeprom and checking staus
+		
 	LCD_MESSAGE1(0, 1, "GETING ZWGHT");
 	checkStatus(eemem_get_weight(WEIGHT_ZERO, (uint32_t & )zeroWeight), STAT_LED5);
-	//zeroWeight = int32_t(zeroWeightU);
-		
-	//get target weight from eeprom and checking status
-	LCD_MESSAGE1(0, 1, "GETING ZWGHT");	
+			
+	LCD_MESSAGE1(0, 1, "GETING TWGHT");	
 	checkStatus(eemem_get_weight(WEIGHT_TARGET, (uint32_t & )targetWeight), STAT_LED9);
-	//targetWeight = int32_t(targetWeightU);
 	
-	//set ofset for correct measurements
 	wght_set_offset(zeroWeight);
-
-
-	if(reg == TEST_SMS)
-	{
-		//send sms(wght_get_value()-zeroWeight)*1000/(targetWeight-zeroWeight)
-	}
-	
-	/*if(reg==TEST_MODE)
-	{
 		
-	}
-	else if(reg==WORK_MODE)
-	{
-		
-	}*/
+    snprintf(gsmBuf, MAX_LEN_OF_STRING, "ZW = %li", zeroWeight);
+    snprintf(tmpBuf, MAX_LEN_OF_STRING, "TW = %li", targetWeight);
 
-	LCD_MESSAGE1(0, 1, "R = ");
-	#ifdef	LCD
-	lcd_setXY(1,10);
-	lcd_WrLong((uint32_t)reg,1);
-	_delay_ms(5000);
-	lcd_setXY(1,15);
-	lcd_WrLong(zeroWeight,1);		
-	lcd_setXY(0,15);
-	lcd_WrLong(targetWeight,1);
-	_delay_ms(5000);		
-	stat_led_set_reset(0,0,0,0);
-	lcd_clear();
-	#endif
-	
+    LCD_MESSAGE2(0, gsmBuf, 0, tmpBuf);
+    LCD_DELAY;
+    LCD_DELAY;
+    LCD_DELAY;
+
     while(1)
     {
 
+    	averageWeight = average(averageWeight, wght_get_value());
+    	averageVoltage = average(averageVoltage, (uint32_t)adc_on_get_off());
 
-		//convertWeightToString(gsmBuf, wght_get_value());
-		snprintf(gsmBuf, MAX_LEN_OF_STRING, "%.3f", wght_get_value()/double(targetWeight - zeroWeight));
-		//sprintf(gsmBuf, "%.3f", 12.333);
-		//dtostrf(wght_get_value()/double(targetWeight - zeroWeight), 7, 3, gsmBuf);
-		/*LCD_MESSAGE1(0, 0, gsmBuf);	
-		LCD_DELAY;*/
+    	LCD_MESSAGE1(0, 1, "ENTER TO ADC");
+    	LCD_DELAY;
 
-
-    	
-		//form report string for sms message
+    	averageWeight = average(averageWeight, wght_get_value());
+    	averageVoltage = average(averageVoltage, (uint32_t)adc_on_get_off());
+		
+		snprintf(gsmBuf, MAX_LEN_OF_STRING, "%.3f", averageWeight/double(targetWeight - zeroWeight));
+		    	 
 		memset(tmpBuf, 0, MAX_LEN_OF_STRING);
 
 		if(alarmFlag){
@@ -200,30 +173,18 @@ int main(void)
 			alarmFlag = false;
 		} 
 
-
 		strcat(tmpBuf, "W:");
 		strcat(tmpBuf, gsmBuf);
-
-		/*LCD_MESSAGE1(0, 1, gsmBuf);
-    	LCD_DELAY;*/
-
-
+		
 		strcat(tmpBuf, "; B:");
-		memset(gsmBuf, 0, MAX_LEN_OF_STRING);
-
-		LCD_MESSAGE1(0, 1, "ENTER TO ADC");
-    	LCD_DELAY;
-    	
-		//convertADCtoVoltage(gsmBuf, adc_on_get_off());
-		snprintf(gsmBuf, MAX_LEN_OF_STRING, "%.2f", adc_on_get_off()/double(ADC_ONE_VOLT));
-		//dtostrf(adc_on_get_off()/double(ADC_ONE_VOLT), 7, 3, gsmBuf);
-		strcat(gsmBuf, "V");
-		/*LCD_MESSAGE2(0, "VOLTAGE:", 4, gsmBuf);		
-    	LCD_DELAY;*/
-
+		memset(gsmBuf, 0, MAX_LEN_OF_STRING);		
+    			
+		snprintf(gsmBuf, MAX_LEN_OF_STRING, "%.2f",averageVoltage/double(ADC_ONE_VOLT));		
+		strcat(gsmBuf, "V");		
 		strcat(tmpBuf, gsmBuf);
 
 		LCD_MESSAGE2(0, "SEND SMS:", 0, tmpBuf);
+
 		gsmPrepare();
 		if(gsm_send_sms(tmpBuf, gsmBuf)){
 			LCD_MESSAGE1(0, 1,"SEND SMS OK");
@@ -249,20 +210,11 @@ int main(void)
 		
 		exitFromPowerSave();	
 
-		LCD_MESSAGE1(0, 1, "EXIT FROM PSM");
-		LCD_DELAY;
-		
-		//_delay_ms(8000);
-		
+		averageWeight = wght_get_value();
+		averageVoltage = (uint32_t)adc_on_get_off();
 
-		//_delay_ms(5000);
-	//	weight = wght_get_value();
-		// #ifdef LCD		
-		// lcd_clear();
-		// lcd_setXY(1,12);		
-		//  lcd_WrLong( wght_get_value(),1);
-		//  _delay_ms(5000);
-		//  #endif	
+		LCD_MESSAGE1(0, 1, "EXIT FROM PSM");
+		LCD_DELAY;		
     }
 }
 
@@ -290,8 +242,7 @@ uint8_t getModeByButtons(void)
 				else
 				{
 					return TEST_SMS;
-				}
-				
+				}				
 			}			
 		}				
 	}
@@ -374,9 +325,6 @@ void enterInPowerSave(void){
 	TIMSK2 = 0x01; //enable interrupt
 	TCCR2B = 0x07; //start timer with prescaler 1024
 	sleepFlag = true;		
-	/*PRR = 0xff;
-	MCUCR |= 0x60; //disable BOD in sleep
-	SMCR = 0x02; //goto power-save mode	*/
 	set_sleep_mode(SLEEP_MODE_PWR_SAVE);
 	sleep_enable();
 	clock_prescale_set(clock_div_256);
@@ -456,7 +404,8 @@ void checkStatus(uint8_t status, uint8_t ledStat){
 				lcd_setXY(1,5);
 				lcd_WrStr("Error");
 				lcd_setXY(1,15);
-				lcd_WrLong(status, 0);				
+				lcd_WrLong(status, 0);
+				LCD_DELAY;				
 				#endif
 				enterInPowerDown();
 			}
@@ -468,16 +417,7 @@ void scaleInit(void){
 	INIT_PWR;
 	PWR_ON;
 	_delay_ms(500);
-	PWR_OFF;
-	_delay_ms(500);
-	PWR_ON;
-	_delay_ms(500);
-	PWR_OFF;
-	_delay_ms(500);
-	PWR_ON;
-	_delay_ms(100);
 	
-
 	LCD_INIT;
 	initAlarm();
 
@@ -498,19 +438,14 @@ void scaleInit(void){
 	if(gsm_init()){
 		gsm_send_at("AT+CFUN=0", gsmBuf); //power minimal func
 	}
-	
-	/*LCD_MESSAGE1(0, 0, gsmBuf);
-	LCD_DELAY;*/
-		
+				
 	LCD_MESSAGE1(0, 1, "WEIGHT INIT");	
 	wght_init();
 	LCD_DELAY;
 }
 
 void gsmPrepare(void){
-	gsm_send_at("AT+CFUN=1", gsmBuf); //power norm func
-	/*LCD_MESSAGE1(0, 0, gsmBuf);
-	LCD_DELAY;*/
+	gsm_send_at("AT+CFUN=1", gsmBuf); //power norm func	
 	_delay_ms(1500);
 	if(gsm_init()){
 		LCD_MESSAGE1(0, 1, "GSM INIT OK");
@@ -541,3 +476,6 @@ void initAlarm(void){
 
 }
 
+int32_t average(int32_t val1, int32_t val2){
+	return (val1 + val2) / 2;
+}
